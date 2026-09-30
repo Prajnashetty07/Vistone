@@ -1,4 +1,7 @@
 import os, cv2, json, numpy as np, mediapipe as mp
+# Patch for colormath with numpy >= 1.24
+if not hasattr(np, "asscalar"):
+    np.asscalar = lambda a: a.item()
 from sklearn.mixture import GaussianMixture
 from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_conversions import convert_color
