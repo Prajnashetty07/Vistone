@@ -2,7 +2,6 @@ import os, cv2, json, numpy as np, mediapipe as mp
 # Patch for colormath with numpy >= 1.24
 if not hasattr(np, "asscalar"):
     np.asscalar = lambda a: a.item()
-from sklearn.mixture import GaussianMixture
 from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_conversions import convert_color
 from colormath.color_diff import delta_e_cie2000
@@ -252,14 +251,13 @@ def gmm_dominant_rgb(pixels_rgb, mode='light', return_clusters=False):
 
     n = 3
     try:
-        gmm = GaussianMixture(n_components=n, covariance_type='full', random_state=0, reg_covar=1e-6)
-        gmm.fit(X)
-        labels = gmm.predict(X)
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        ret, labels, centers = cv2.kmeans(X, n, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+        labels = labels.flatten()
         counts = np.bincount(labels, minlength=n).astype(np.float32)
         frac = counts/np.maximum(1.0, counts.sum())
-        centers = gmm.means_
     except Exception as e:
-        print(f"[warn] GMM fit failed: {e}. Fallback median.")
+        print(f"[warn] KMeans fit failed: {e}. Fallback median.")
         fm = robust_median(X)
         if return_clusters: return fm, None, None
         return fm
